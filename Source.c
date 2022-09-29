@@ -35,7 +35,7 @@ int main() {
     }
 
     int enteredParts = 0;
-    printf("Enter an instruction: \n");
+    printf("Enter an Instruction: ");
     char inputCommand[11];                                      // room for 10 characters per part + \0 (automatically added)
     inputCommand[0] = '\0';
     int result;
@@ -95,7 +95,11 @@ int main() {
     RegisterNode* registerHead = readRegistersFile();
     InstructionNode* instructionHead = readInstructionsFile();
 
-    printf("%s\n", getInstructionOpcode(instructionHead, "beq"));
+    // This is the easy part
+    printf("Result: ");
+
+    // And now for the hard part
+
 
     // deallocate the instruction parts array
     for (int i = 0; i < 4; i++) {
