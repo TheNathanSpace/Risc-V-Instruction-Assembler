@@ -1,9 +1,77 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "dict.h"
 #define true 1
 #define false 0
+
+// RegisterNode is a linked list containing all the registers' numbers/names
+typedef struct register_node register_node;
+typedef struct register_node {
+    register_node* next;
+    register_node* head;
+
+    // Tail is only guarenteed to be updated for the head
+    register_node* tail;
+
+    char* registerNumber;
+    char* registerName;
+} RegisterNode;
+
+void freeRegisterList(RegisterNode* head) {
+    while (head != NULL) {
+        free(head->registerNumber);
+        free(head->registerName);
+
+        RegisterNode* savedHead = head;
+        head = head->next;
+        free(savedHead);
+    }
+}
+
+// Returns pointer to inserted node
+RegisterNode* insertRegisterNode(RegisterNode* head, char* registerNumber, char* registerName) {
+    RegisterNode* newNode = malloc(sizeof(RegisterNode));
+    newNode->next = NULL;
+    if (head == NULL) {
+        newNode->head = newNode;
+        newNode->tail = newNode;
+    }
+    else {
+        newNode->head = head;
+        head->tail->next = newNode;
+        head->tail = newNode;
+    }
+
+    newNode->tail = newNode;
+
+    newNode->registerNumber = malloc(sizeof(char) * 4);
+    newNode->registerName = malloc(sizeof(char) * 5);
+
+    strcpy_s(newNode->registerNumber, 4, registerNumber);
+    strcpy_s(newNode->registerName, 5, registerName);
+
+    return newNode;
+ }
+
+char* getRegisterNumber(RegisterNode* head, char* registerName) {
+    while (head != NULL) {
+        if (strcmp(head->registerName, registerName) == 0) {
+            return head->registerNumber;
+        }
+        head = head->next;
+    }
+    return NULL;
+}
+char* getRegisterName(RegisterNode* head, char* registerNumber) {
+    while (head != NULL) {
+        if (strcmp(head->registerNumber, registerNumber) == 0) {
+            return head->registerName;
+        }
+        head = head->next;
+    }
+    return NULL;
+}
+
 
 void resetInputPart(char* array) {
     int i = 0;
@@ -16,11 +84,12 @@ void resetInputPart(char* array) {
 }
 
 void printInstructionParts(char** parts) {
-    printf("Entered print function\n");
+    printf("\n");
     for (int i = 0; i < 4; i++) {
         printf("%s", parts[i]);
         printf("\n");
     }
+    printf("\n");
 }
 
 int main() {
@@ -37,7 +106,7 @@ int main() {
     int result;
     
     // While true, keep reading words from input
-    while (1) {
+    while (true) {
         resetInputPart(inputCommand);
         
         // This checks for a newline character by getting the next character
@@ -87,8 +156,8 @@ int main() {
 
     printInstructionParts(instructionParts);
 
-    // Now that the instruction is split up into its parts, you can move foward
-    dict registersDict = new_dict();
+    // Open registers file
+    RegisterNode* registerHead = NULL;
     
     FILE* fp;
     fopen_s(&fp, "Registers.csv", "r");
@@ -97,7 +166,11 @@ int main() {
         exit(-1);
     }
 
+
+    // There's a lot of duplicated code, the but the end result is:
+    // Read in every line, splitting it into key/value, and inserting into a dict
     int skip = true;
+    int initFirst = true;
     char c;
     int onKey = true;
     char key[4] = "\0\0\0\0";
@@ -107,22 +180,33 @@ int main() {
     while (true) {
         i++;
         c = fgetc(fp); // get next character
+
+        // Edge case for end of file
         if (c == EOF) { 
-            printf("Reached end of file\n");
+            //printf("Adding value \"%s\"/\"%s\"\n", key, value);
+            insertRegisterNode(registerHead, key, value);
+            
             break;
         }
 
-        // Skip if newline character
+        // If at the end of a line
         if (c == '\n') {
             if (!skip) {
-                printf("Adding value \"%s\"/\"%s\"\n", key, value);
-                setkey(key, value, &registersDict);
+                // Add to list
+                if (initFirst) {
+                    registerHead = insertRegisterNode(NULL, key, value);
+                    initFirst = false;
+                }
+                else {
+                    insertRegisterNode(registerHead, key, value);
+                }
                 resetInputPart(key);
                 resetInputPart(value);
                 wordIndex = 0;
                 onKey = true;
             }
             else {
+                // Skip first lien
                 resetInputPart(key);
                 resetInputPart(value);
                 wordIndex = 0;
@@ -130,11 +214,8 @@ int main() {
 
                 skip = false;
             }
-            printf("\n");
             continue;
         }
-        printf("char #%d: ", i);
-        printf("%c\n", c);
 
         // Skip if still the first line
         if (skip == true) {
@@ -143,6 +224,7 @@ int main() {
 
         // toggle key/value
         if (c == ',') {
+            wordIndex = 0;
             onKey = !onKey;
             continue;
         }
@@ -158,26 +240,17 @@ int main() {
         if (onKey && wordIndex == 3) wordIndex = 0;
         if (!onKey && wordIndex == 4) wordIndex = 0;
     }
-
     fclose(fp);
-
-    printf("Closed file\n");
-
-    char* val = getvalue("x4", registersDict);
-    printf("Got value\n");
-    if (val == NULL) {
-        printf("Error: dict value is NULL\n");
-        exit(-1);
-    }
-    printf(val);
     printf("\n");
+
+    // So now, the registers list is initialized and the same should be done for the instructions list
 
     // deallocate the instruction parts array
     for (int i = 0; i < 4; i++) {
         free(instructionParts[i]);
     }
     free(instructionParts);
-    free_dict(&registersDict);
+    freeRegisterList(registerHead);
 
     return 0;
 }
