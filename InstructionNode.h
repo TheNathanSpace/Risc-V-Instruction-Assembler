@@ -54,15 +54,15 @@ InstructionNode* insertInstructionNode(InstructionNode* head, char* instructionN
 
     newNode->instructionName = malloc(sizeof(char) * 7); // max size of 6
     newNode->opcode = malloc(sizeof(char) * 8);    // max size of 7 bits (will probably need leading zeroes?)  
-    newNode->funct3 = malloc(sizeof(char) * 7);    // max size of 6 bits (will probably need leading zeroes?)  
-    newNode->funct7 = malloc(sizeof(char) * 7);    // max size of 6 bits (will probably need leading zeroes?)  
+    newNode->funct3 = malloc(sizeof(char) * 4);    // max size of 3 bits (will probably need leading zeroes?)  
+    newNode->funct7 = malloc(sizeof(char) * 8);    // max size of 7 bits (will probably need leading zeroes?)  
     newNode->type = malloc(sizeof(char) * 2); // max size of 1
-    newNode->immValue = malloc(sizeof(char) * 2); // max size of 1
+    newNode->immValue = malloc(sizeof(char) * 2); // max size of 1 // todo: THIS IS WRONG!!!!!!
 
     strcpy_s(newNode->instructionName, 7, instructionName);
     strcpy_s(newNode->opcode, 8, opcode);
-    strcpy_s(newNode->funct3, 7, funct3);
-    strcpy_s(newNode->funct7, 7, funct7);
+    strcpy_s(newNode->funct3, 4, funct3);
+    strcpy_s(newNode->funct7, 8, funct7);
     strcpy_s(newNode->type, 2, type);
     strcpy_s(newNode->immValue, 2, immmValue);
 
@@ -139,8 +139,8 @@ InstructionNode* readInstructionsFile() {
     // todo: must fix here
     char instructionName[7] = "\0\0\0\0\0\0\0";
     char opcode[8] = "\0\0\0\0\0\0\0\0";
-    char funct3[7] = "\0\0\0\0\0\0\0";
-    char funct7[7] = "\0\0\0\0\0\0\0";
+    char funct3[4] = "\0\0\0\0";
+    char funct7[8] = "\0\0\0\0\0\0\0\0";
     char type[2] = "\0\0";
     char immValue[2] = "\0\0";
 
@@ -223,12 +223,12 @@ InstructionNode* readInstructionsFile() {
         case 2:
             funct3[wordIndex] = c;
             wordIndex++;
-            if (wordIndex == 6) wordIndex = 0;
+            if (wordIndex == 3) wordIndex = 0;
             break;
         case 3:
             funct7[wordIndex] = c;
             wordIndex++;
-            if (wordIndex == 6) wordIndex = 0;
+            if (wordIndex == 7) wordIndex = 0;
             break;
         case 4:
             type[wordIndex] = c;
