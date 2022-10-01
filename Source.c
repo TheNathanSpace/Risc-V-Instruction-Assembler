@@ -28,17 +28,29 @@ void printInstructionParts(char** parts) {
 }
 
 // Size is basically the offset to start at, then it stops at the 0th index
+// Works for both positive and negative numbers
 void decToBin(int input, char* result, int size) {
     int i = size - 1;
+
+    // For two's complement
+    char onBit = '1';
+    char offBit = '0';
+    if (input < 0) {
+        input *= -1;        // Invert the number
+        input -= 1;         // Add 1
+        onBit = '0';
+        offBit = '1';
+    }
+
     while (i != -1) {
         int quotient = input / 2;
         int remainder = input % 2;
         input = quotient;
         if (remainder == 1) {
-            result[i] = '1';
+            result[i] = onBit;
         }
         else {
-            result[i] = '0';
+            result[i] = offBit;
         }
         i--;
     }
@@ -181,11 +193,6 @@ int main() {
             finishedBinInstruction[20 + i] = rdBin[i];
         }
         free(rdBin);
-
-        char* opcode = getInstructionOpcode(instructionHead, instructionParts[0]);
-        for (int i = 0; i < 7; i++) {
-            finishedBinInstruction[25 + i] = opcode[i];
-        }
         
         break;
     }
@@ -211,12 +218,37 @@ int main() {
         copyString(finishedBinInstruction, 20, rdBin, 0, 5);
         free(rdBin);
 
-        char* opcode = getInstructionOpcode(instructionHead, instructionParts[0]);
-        copyString(finishedBinInstruction, 25, opcode, 0, 7);
+        break;
+    }
+    case 'I':
+    {
+        char* immBin = calloc(13, sizeof(char));
+        char* immChar = instructionParts[3];
+        int immDec = atoi(immChar);
+        decToBin(immDec, immBin, 12);
+        copyString(finishedBinInstruction, 0, immBin, 0, 12);
+        free(immBin);
+
+        char* rs1 = instructionParts[2];
+        char* rs1Bin = registerToDec(registerHead, rs1);
+        copyString(finishedBinInstruction, 12, rs1Bin, 0, 5);
+        free(rs1Bin);
+
+        char* funct3 = getInstructionFunct3(instructionHead, instructionParts[0]);
+        copyString(finishedBinInstruction, 17, funct3, 0, 3);
+
+        char* rd = instructionParts[1];
+        char* rdBin = registerToDec(registerHead, rd);
+        copyString(finishedBinInstruction, 20, rdBin, 0, 5);
+        free(rdBin);
 
         break;
     }
     }
+
+    // The opcode is in the same place for each instruction type
+    char* opcode = getInstructionOpcode(instructionHead, instructionParts[0]);
+    copyString(finishedBinInstruction, 25, opcode, 0, 7);
 
     printf("Result: %s\n", finishedBinInstruction);
 
