@@ -352,6 +352,21 @@ int main() {
 
         break;
     }
+    case 'U':
+    {
+        // U type really only takes a 20-bit immediate (but it's the upper part of a 32-bit immediate)
+        char* immBin = calloc(21, sizeof(char));
+        int immDec = atoi(instructionParts[2]);
+        decToBin(immDec, immBin, 20);
+        copyString(finishedBinInstruction, 0, immBin, 0, 20);
+
+        char* rd = instructionParts[1];
+        char* rdBin = registerToBin(registerHead, rd);
+        copyString(finishedBinInstruction, 20, rdBin, 0, 5);
+        free(rdBin);
+
+        break;
+    }
     }
 
     // The opcode is in the same place for each instruction type
