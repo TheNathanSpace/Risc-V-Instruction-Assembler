@@ -57,9 +57,9 @@ void decToBin(int input, char* result, int size) {
 }
 
 // endingIndex is inclusive
-void copyString(char* destination, int startingDestIndex, char* source, int startingSouceIndex, int numChars) {
-    for (int i = startingSouceIndex; i <= numChars; i++) {
-        destination[startingDestIndex] = source[i];
+void copyString(char* destination, int startingDestIndex, char* source, int startingSourceIndex, int numChars) {
+    for (int i = 0; i < numChars; i++) {
+        destination[startingDestIndex] = source[startingSourceIndex + i];
         startingDestIndex++;
     }
 }
@@ -73,7 +73,7 @@ void registerNameToNumber(char* registerNumber, char* destination) {
 }
 
 // Must free rdBin when finished!!
-char* registerToDec(RegisterNode* registerHead, char* r) {
+char* registerToBin(RegisterNode* registerHead, char* r) {
     if (getRegisterName(registerHead, r) == NULL) {
         // if entered as a name, convert to number
         registerNameToNumber(getRegisterNumber(registerHead, r), r);
@@ -84,6 +84,53 @@ char* registerToDec(RegisterNode* registerHead, char* r) {
     decToBin(rdDec, rdBin, 5); // rd has 5 bits
     
     return rdBin;
+}
+
+int extractOnlyOffset(char* instructionPart) {
+    int bytes = 0;
+
+    int i = 0;
+    while (true) {
+        if (instructionPart[i] == '(') {
+            break;
+        }
+        bytes++;
+        i++;
+    }
+    char* extracted = calloc(bytes + 1, sizeof(char));
+    extracted[bytes] = '\0';
+    copyString(extracted, 0, instructionPart, 0, bytes);
+    int offset = atoi(extracted);
+
+    return offset;
+}
+
+// Must deallocate after!
+char* extractOnlyRegister(char* instructionPart) {
+    
+    int bytesBegin = false;
+    int bytes = 0;
+
+    int i = 0;
+    int startedI = 0;
+    while (true) {
+        if (instructionPart[i] == '(') {
+            bytesBegin = true;
+            startedI = i + 1;
+        }
+        else if (instructionPart[i] == ')') {
+            break;
+        }
+        else if (bytesBegin) {
+            bytes++;
+        }
+        i++;
+    }
+
+    char* extracted = calloc(bytes + 1, sizeof(char));
+    extracted[bytes] = '\0';
+    copyString(extracted, 0, instructionPart, startedI, bytes);
+    return extracted;
 }
 
 int main() {
@@ -201,12 +248,12 @@ int main() {
         copyString(finishedBinInstruction, 0, funct7, 0, 7);
 
         char* rs2 = instructionParts[3];
-        char* rs2Bin = registerToDec(registerHead, rs2);
+        char* rs2Bin = registerToBin(registerHead, rs2);
         copyString(finishedBinInstruction, 7, rs2Bin, 0, 5);
         free(rs2Bin);
 
         char* rs1 = instructionParts[2];
-        char* rs1Bin = registerToDec(registerHead, rs1);
+        char* rs1Bin = registerToBin(registerHead, rs1);
         copyString(finishedBinInstruction, 12, rs1Bin, 0, 5);
         free(rs1Bin);
 
@@ -214,7 +261,7 @@ int main() {
         copyString(finishedBinInstruction, 17, funct3, 0, 3);
 
         char* rd = instructionParts[1];
-        char* rdBin = registerToDec(registerHead, rd);
+        char* rdBin = registerToBin(registerHead, rd);
         copyString(finishedBinInstruction, 20, rdBin, 0, 5);
         free(rdBin);
 
@@ -230,7 +277,7 @@ int main() {
         free(immBin);
 
         char* rs1 = instructionParts[2];
-        char* rs1Bin = registerToDec(registerHead, rs1);
+        char* rs1Bin = registerToBin(registerHead, rs1);
         copyString(finishedBinInstruction, 12, rs1Bin, 0, 5);
         free(rs1Bin);
 
@@ -238,9 +285,43 @@ int main() {
         copyString(finishedBinInstruction, 17, funct3, 0, 3);
 
         char* rd = instructionParts[1];
-        char* rdBin = registerToDec(registerHead, rd);
+        char* rdBin = registerToBin(registerHead, rd);
         copyString(finishedBinInstruction, 20, rdBin, 0, 5);
         free(rdBin);
+
+        break;
+    }
+    case 'S':
+    {
+        // sb t6, 64(s2)
+        // for 12 bit imm
+        char* immBin = calloc(13, sizeof(char));
+        int immDec = extractOnlyOffset(instructionParts[2]);
+        printf("immDec: %d\n", immDec);
+        decToBin(immDec, immBin, 12);
+        printf("immBin: %s\n", immBin);
+        copyString(finishedBinInstruction, 0, immBin, 0, 7);
+
+        // rs2 and rs1 are kinda in the weird order for these instructions, since
+        // rs2 comes first in the instruction. I'm not renaming the variables, so
+        // just know that THIS BLOCK IS ACTUALLY rs2.
+        char* rs1 = instructionParts[1];
+        char* rs1Bin = registerToBin(registerHead, rs1);
+        copyString(finishedBinInstruction, 7, rs1Bin, 0, 5);
+        free(rs1Bin);
+
+        // And THIS BLOCK IS ACTUALLY rs1.
+        char* rs2 = extractOnlyRegister(instructionParts[2]); // needs to be freed
+        char* rs2Bin = registerToBin(registerHead, rs2);
+        //free(rs2);
+        copyString(finishedBinInstruction, 12, rs2Bin, 0, 5);
+        free(rs2Bin);
+
+        char* funct3 = getInstructionFunct3(instructionHead, instructionParts[0]);
+        copyString(finishedBinInstruction, 17, funct3, 0, 3);
+
+        copyString(finishedBinInstruction, 20, immBin, 0, 5);
+        free(immBin);
 
         break;
     }
