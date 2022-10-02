@@ -27,8 +27,8 @@ void printInstructionParts(char** parts) {
     printf("\n");
 }
 
-// Size is basically the offset to start at, then it stops at the 0th index
-// Works for both positive and negative numbers
+// Converts a decimal number (both positive and negative) to its binary representation.
+// Since it fills backwards, "size" is the largest index to start at, then it stops at the 0th index.
 void decToBin(int input, char* result, int size) {
     int i = size - 1;
 
@@ -72,6 +72,7 @@ void registerNameToNumber(char* registerNumber, char* destination) {
     free(tempNum);
 }
 
+// Converts a register (either name or number) to its binary representation
 // Must free rdBin when finished!!
 char* registerToBin(RegisterNode* registerHead, char* r) {
     if (getRegisterName(registerHead, r) == NULL) {
@@ -297,9 +298,7 @@ int main() {
         // for 12 bit imm
         char* immBin = calloc(13, sizeof(char));
         int immDec = extractOnlyOffset(instructionParts[2]);
-        printf("immDec: %d\n", immDec);
         decToBin(immDec, immBin, 12);
-        printf("immBin: %s\n", immBin);
         copyString(finishedBinInstruction, 0, immBin, 0, 7);
 
         // rs2 and rs1 are kinda in the weird order for these instructions, since
@@ -322,6 +321,34 @@ int main() {
 
         copyString(finishedBinInstruction, 20, immBin, 0, 5);
         free(immBin);
+
+        break;
+    }
+    case 'B':
+    {
+        // B type has 12 bit imm
+        char* immBin = calloc(13, sizeof(char));
+        int immDec = atoi(instructionParts[3]);
+        decToBin(immDec, immBin, 12);
+
+        copyString(finishedBinInstruction, 0, immBin, 0, 1);    //imm[12] (note that these indices are going off the slideshow, and for some reason start at 1, not 0)
+        copyString(finishedBinInstruction, 1, immBin, 2, 6);    //imm[10:5]
+
+        char* rs2 = instructionParts[2];
+        char* rs2Bin = registerToBin(registerHead, rs2);
+        copyString(finishedBinInstruction, 7, rs2Bin, 0, 5);
+        free(rs2Bin);
+
+        char* rs1 = instructionParts[2];
+        char* rs1Bin = registerToBin(registerHead, rs1);
+        copyString(finishedBinInstruction, 12, rs1Bin, 0, 5);
+        free(rs1Bin);
+
+        char* funct3 = getInstructionFunct3(instructionHead, instructionParts[0]);
+        copyString(finishedBinInstruction, 17, funct3, 0, 3);
+
+        copyString(finishedBinInstruction, 20, immBin, 8, 4);    //imm[4:1]
+        copyString(finishedBinInstruction, 24, immBin, 1, 1);    //imm[11]
 
         break;
     }
