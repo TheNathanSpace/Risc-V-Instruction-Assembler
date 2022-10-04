@@ -3,6 +3,15 @@
 #define true 1
 #define false 0
 
+/*
+ *  This file defines a linked list made up of RISC-V instructions, constructed
+ *  from the contents of the provided CSV file.
+ *  
+ *  In C, there's no standard library support for dictionaries or hashmaps or
+ *  anything like that, so a linked list made up of these structs was the best
+ *  compromise I could find.
+ */
+
 void resetInputPart(char* array);
 
 // InstructionNode is a linked list containing all the instructions' data
@@ -23,6 +32,10 @@ typedef struct instruction_node {
 
 } InstructionNode;
 
+/// <summary>
+/// Frees the entire linked list
+/// </summary>
+/// <param name="head">Head of the linked list</param>
 void freeInstructionList(InstructionNode* head) {
     while (head != NULL) {
         free(head->instructionName);
@@ -36,8 +49,18 @@ void freeInstructionList(InstructionNode* head) {
     }
 }
 
-// Returns pointer to inserted node
-InstructionNode* insertInstructionNode(InstructionNode* head, char* instructionName, char* opcode, char* funct3, char* funct7, char* type, int* immmValue) {
+/// <summary>
+/// Creates and inserts a new InstructionNode, constructed from the parameters.
+/// </summary>
+/// <param name="head">The head of the linked list</param>
+/// <param name="instructionName">The name (keyword) of the RISC-V instruction. eg: "add"</param>
+/// <param name="opcode"></param>
+/// <param name="funct3"></param>
+/// <param name="funct7"></param>
+/// <param name="type"></param>
+/// <param name="immmValue"></param>
+/// <returns>Pointer to the inserted node.</returns>
+InstructionNode* insertInstructionNode(InstructionNode* head, char* instructionName, char* opcode, char* funct3, char* funct7, char* type, int* immValue) {
     InstructionNode* newNode = malloc(sizeof(InstructionNode));
     newNode->next = NULL;
     if (head == NULL) {
@@ -64,7 +87,7 @@ InstructionNode* insertInstructionNode(InstructionNode* head, char* instructionN
     strcpy_s(newNode->funct3, 4, funct3);
     strcpy_s(newNode->funct7, 8, funct7);
     strcpy_s(newNode->type, 2, type);
-    strcpy_s(newNode->immValue, 2, immmValue);
+    strcpy_s(newNode->immValue, 2, immValue);
 
     return newNode;
 }
@@ -119,7 +142,10 @@ char* getInstructionImmValue(InstructionNode* head, char* instructionName) {
     return NULL;
 }
 
-// Read RISC-V_Instructions.csv, returning the head of the list
+/// <summary>
+/// Reads the provided RISC-V instructions CSV file, creating a linked list from its contents.
+/// </summary>
+/// <returns>A pointer to the head of the linked list.</returns>
 InstructionNode* readInstructionsFile() {
     InstructionNode* instructionHead = NULL;
 
@@ -168,6 +194,7 @@ InstructionNode* readInstructionsFile() {
                 else {
                     insertInstructionNode(instructionHead, instructionName, opcode, funct3, funct7, type, immValue);
                 }
+                // clear them out to make room for the next instruction line
                 resetInputPart(instructionName);
                 resetInputPart(opcode);
                 resetInputPart(funct3);
@@ -242,7 +269,7 @@ InstructionNode* readInstructionsFile() {
             break;
         }
     }
-    fclose(fp);
+	fclose(fp);
 
     return instructionHead;
 }

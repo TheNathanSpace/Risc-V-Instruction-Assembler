@@ -3,6 +3,13 @@
 #define true 1
 #define false 0
 
+/*
+ *  This is all extremely similar to the structure in InstructionNode.h—
+ *  in fact, I wrote this first, then copy/pasted it into a new file and
+ *  tweaked it for the instructions. If the comments here are a little
+ *  sparse, go read InstructionNode.h.
+ */
+
 void resetInputPart(char* array);
 
 // RegisterNode is a linked list containing all the registers' numbers/names
