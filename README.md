@@ -3,7 +3,7 @@ A program to convert between a RISC-V assembly instruction and its binary equiva
 Examples:
 
 | RISC-V Instruction | Binary Equivalent |
-| --- | --- | --- |
+| --- | --- |
 | add x14, x13, x15 | 00000000111101101000011100110011 |
 | addi x16, x17, -32 | 11111110000010001000100000010011 |
 | bne x10, x22, 1023 | 00111111011001010001111101100011 |
